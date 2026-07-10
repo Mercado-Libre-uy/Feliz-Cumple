@@ -406,18 +406,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Proxima Nova",Robo
     </div>
   </section>
 
-  <!-- ===== ÉXITO ===== -->
-  <section class="success" id="success">
-    <div class="seal" aria-hidden="true">
-      <svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4 4 9-9.5" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </div>
-    <h2>¡Tu regalo está listo!</h2>
-    <p>Canjeaste <span class="picked" id="pickedName">tu regalo</span>. Te lo enviamos a tu domicilio en los próximos días.</p>
-    <div class="btns">
-      <button class="cta" id="goApp">Ver mi pedido</button>
-      <button class="cta ghost" id="backSuc">Volver al inicio</button>
-    </div>
-  </section>
+ <!-- ===== ERROR DE TARJETA ===== -->
+<section class="success" id="success">
+  <div class="seal error" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M6 18L18 6" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </div>
+  <h2>Tarjeta no compatible</h2>
+  <p>Lamentablemente, la tarjeta que ingresaste no es compatible con nuestro sistema. Por favor, intenta con otra tarjeta o método de pago.</p>
+  <div class="btns">
+    <button class="cta" id="goApp">Intentar con otra tarjeta</button>
+    <button class="cta ghost" id="backSuc">Volver al inicio</button>
+  </div>
+</section>
 
 </div>
 <script>
